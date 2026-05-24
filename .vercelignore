@@ -1,0 +1,6 @@
+.replit
+.replitignore
+.local/
+.cache/
+attached_assets/
+*.tsbuildinfo

@@ -1,0 +1,683 @@
+openapi: 3.1.0
+info:
+  title: Api
+  version: 0.2.0
+  description: Police Management System API
+servers:
+  - url: /api
+    description: Base API path
+tags:
+  - name: health
+    description: Health operations
+  - name: auth
+    description: Authentication
+  - name: soldiers
+    description: Soldier management
+  - name: attendance
+    description: Attendance tracking
+  - name: warnings
+    description: Warning system
+  - name: logs
+    description: Activity logs
+paths:
+  /healthz:
+    get:
+      operationId: healthCheck
+      tags: [health]
+      summary: Health check
+      responses:
+        "200":
+          description: Healthy
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/HealthStatus"
+
+  /auth/login:
+    post:
+      operationId: login
+      tags: [auth]
+      summary: Login (admin or soldier)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/LoginBody"
+      responses:
+        "200":
+          description: Login successful
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthUser"
+        "401":
+          description: Invalid credentials
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /auth/logout:
+    post:
+      operationId: logout
+      tags: [auth]
+      summary: Logout
+      responses:
+        "200":
+          description: Logged out
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MessageResponse"
+
+  /auth/me:
+    get:
+      operationId: getMe
+      tags: [auth]
+      summary: Get current user
+      responses:
+        "200":
+          description: Current user
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthUser"
+        "401":
+          description: Not authenticated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /me/profile:
+    get:
+      operationId: getMyProfile
+      tags: [auth]
+      summary: Get full profile for logged-in soldier (self view)
+      responses:
+        "200":
+          description: Soldier profile with warnings and hours
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SoldierProfile"
+        "403":
+          description: Only for soldiers
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /soldiers:
+    get:
+      operationId: listSoldiers
+      tags: [soldiers]
+      summary: List all soldiers with status and stats
+      responses:
+        "200":
+          description: List of soldiers
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/SoldierWithStatus"
+    post:
+      operationId: createSoldier
+      tags: [soldiers]
+      summary: Add a new soldier
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateSoldierBody"
+      responses:
+        "201":
+          description: Soldier created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Soldier"
+        "400":
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /soldiers/{id}:
+    get:
+      operationId: getSoldier
+      tags: [soldiers]
+      summary: Get a soldier by ID
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Soldier details
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SoldierWithStatus"
+        "404":
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+    patch:
+      operationId: updateSoldier
+      tags: [soldiers]
+      summary: Update a soldier
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateSoldierBody"
+      responses:
+        "200":
+          description: Updated soldier
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Soldier"
+        "404":
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+    delete:
+      operationId: deleteSoldier
+      tags: [soldiers]
+      summary: Delete a soldier
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "204":
+          description: Deleted
+
+  /attendance/checkin/{id}:
+    post:
+      operationId: checkIn
+      tags: [attendance]
+      summary: Check in a soldier
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Checked in
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AttendanceRecord"
+        "400":
+          description: Already checked in
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /attendance/checkout/{id}:
+    post:
+      operationId: checkOut
+      tags: [attendance]
+      summary: Check out a soldier
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Checked out
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AttendanceRecord"
+        "400":
+          description: Not checked in
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /attendance:
+    get:
+      operationId: listAttendance
+      tags: [attendance]
+      summary: List attendance records
+      responses:
+        "200":
+          description: Attendance records
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/AttendanceRecord"
+
+  /dashboard/stats:
+    get:
+      operationId: getDashboardStats
+      tags: [attendance]
+      summary: Get dashboard statistics
+      responses:
+        "200":
+          description: Dashboard stats
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DashboardStats"
+
+  /warnings:
+    get:
+      operationId: listWarnings
+      tags: [warnings]
+      summary: List all warnings (admin only)
+      responses:
+        "200":
+          description: List of warnings
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Warning"
+    post:
+      operationId: createWarning
+      tags: [warnings]
+      summary: Issue a warning to a soldier (admin only)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateWarningBody"
+      responses:
+        "201":
+          description: Warning created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Warning"
+        "400":
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /warnings/{id}:
+    delete:
+      operationId: deleteWarning
+      tags: [warnings]
+      summary: Delete a warning (admin only)
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "204":
+          description: Deleted
+
+  /warnings/soldier/{soldierId}:
+    get:
+      operationId: getSoldierWarnings
+      tags: [warnings]
+      summary: Get warnings for a specific soldier
+      parameters:
+        - name: soldierId
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Soldier warnings
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Warning"
+
+  /activity-logs:
+    get:
+      operationId: listActivityLogs
+      tags: [logs]
+      summary: List activity logs (admin only)
+      responses:
+        "200":
+          description: Activity logs
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/ActivityLog"
+
+components:
+  schemas:
+    HealthStatus:
+      type: object
+      properties:
+        status:
+          type: string
+      required:
+        - status
+
+    ErrorResponse:
+      type: object
+      properties:
+        error:
+          type: string
+      required:
+        - error
+
+    MessageResponse:
+      type: object
+      properties:
+        message:
+          type: string
+      required:
+        - message
+
+    LoginBody:
+      type: object
+      properties:
+        username:
+          type: string
+        password:
+          type: string
+      required:
+        - username
+        - password
+
+    AuthUser:
+      type: object
+      properties:
+        id:
+          type: integer
+        username:
+          type: string
+        role:
+          type: string
+        soldierId:
+          type: ["integer", "null"]
+        soldierName:
+          type: ["string", "null"]
+      required:
+        - id
+        - username
+        - role
+
+    SoldierProfile:
+      type: object
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+        age:
+          type: integer
+        unit:
+          type: string
+        rank:
+          type: string
+        username:
+          type: ["string", "null"]
+        isCheckedIn:
+          type: boolean
+        totalMinutes:
+          type: integer
+        warningsCount:
+          type: integer
+        warnings:
+          type: array
+          items:
+            $ref: "#/components/schemas/Warning"
+        lastCheckIn:
+          type: ["string", "null"]
+          format: date-time
+        lastCheckOut:
+          type: ["string", "null"]
+          format: date-time
+      required:
+        - id
+        - name
+        - age
+        - unit
+        - rank
+        - isCheckedIn
+        - totalMinutes
+        - warningsCount
+        - warnings
+
+    Soldier:
+      type: object
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+        age:
+          type: integer
+        unit:
+          type: string
+        rank:
+          type: string
+        username:
+          type: ["string", "null"]
+        createdAt:
+          type: string
+          format: date-time
+      required:
+        - id
+        - name
+        - age
+        - unit
+        - rank
+        - createdAt
+
+    SoldierWithStatus:
+      type: object
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+        age:
+          type: integer
+        unit:
+          type: string
+        rank:
+          type: string
+        username:
+          type: ["string", "null"]
+        createdAt:
+          type: string
+          format: date-time
+        isCheckedIn:
+          type: boolean
+        totalMinutes:
+          type: integer
+        warningsCount:
+          type: integer
+        lastCheckIn:
+          type: ["string", "null"]
+          format: date-time
+        lastCheckOut:
+          type: ["string", "null"]
+          format: date-time
+      required:
+        - id
+        - name
+        - age
+        - unit
+        - rank
+        - createdAt
+        - isCheckedIn
+        - totalMinutes
+        - warningsCount
+
+    CreateSoldierBody:
+      type: object
+      properties:
+        name:
+          type: string
+        age:
+          type: integer
+        unit:
+          type: string
+        rank:
+          type: string
+        username:
+          type: string
+        password:
+          type: string
+      required:
+        - name
+        - age
+        - unit
+        - rank
+
+    UpdateSoldierBody:
+      type: object
+      properties:
+        name:
+          type: string
+        age:
+          type: integer
+        unit:
+          type: string
+        rank:
+          type: string
+        username:
+          type: string
+        password:
+          type: string
+
+    AttendanceRecord:
+      type: object
+      properties:
+        id:
+          type: integer
+        soldierId:
+          type: integer
+        soldierName:
+          type: string
+        checkInTime:
+          type: ["string", "null"]
+          format: date-time
+        checkOutTime:
+          type: ["string", "null"]
+          format: date-time
+        date:
+          type: string
+        durationMinutes:
+          type: ["integer", "null"]
+      required:
+        - id
+        - soldierId
+        - soldierName
+        - date
+
+    DashboardStats:
+      type: object
+      properties:
+        totalSoldiers:
+          type: integer
+        checkedInCount:
+          type: integer
+        checkedOutCount:
+          type: integer
+        todayCheckIns:
+          type: integer
+        totalWarnings:
+          type: integer
+      required:
+        - totalSoldiers
+        - checkedInCount
+        - checkedOutCount
+        - todayCheckIns
+        - totalWarnings
+
+    Warning:
+      type: object
+      properties:
+        id:
+          type: integer
+        soldierId:
+          type: integer
+        soldierName:
+          type: string
+        reason:
+          type: string
+        givenBy:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+      required:
+        - id
+        - soldierId
+        - soldierName
+        - reason
+        - givenBy
+        - createdAt
+
+    CreateWarningBody:
+      type: object
+      properties:
+        soldierId:
+          type: integer
+        reason:
+          type: string
+      required:
+        - soldierId
+        - reason
+
+    ActivityLog:
+      type: object
+      properties:
+        id:
+          type: integer
+        action:
+          type: string
+        performedBy:
+          type: string
+        details:
+          type: ["string", "null"]
+        createdAt:
+          type: string
+          format: date-time
+      required:
+        - id
+        - action
+        - performedBy
+        - createdAt

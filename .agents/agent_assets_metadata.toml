@@ -1,0 +1,8 @@
+uploads = []
+generated = []
+
+[[outputs]]
+id = "CSsQztg0kmmZUJZgg7N2t"
+uri = "file://attached_assets/Basic-Website-Creator-VERCEL-READY.zip"
+type = "unspecified"
+title = "Basic-Website-Creator - جاهز لـ Vercel"

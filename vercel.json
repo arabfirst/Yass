@@ -1,0 +1,21 @@
+{
+  "version": 2,
+  "framework": null,
+  "installCommand": "pnpm install --no-frozen-lockfile",
+  "buildCommand": "bash scripts/vercel-build.sh",
+  "outputDirectory": "artifacts/my-website/dist",
+  "rewrites": [
+    { "source": "/api/(.*)", "destination": "/api/handler" },
+    { "source": "/(.*)", "destination": "/index.html" }
+  ],
+  "functions": {
+    "api/handler.mjs": {
+      "maxDuration": 30
+    }
+  },
+  "build": {
+    "env": {
+      "NODE_VERSION": "22"
+    }
+  }
+}
